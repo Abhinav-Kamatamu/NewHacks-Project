@@ -1,4 +1,4 @@
-# 🏙️ AuthentiCity: Connecting Travellers with Genuine Local Experts
+# AuthentiCity: Connecting Travellers with Genuine Local Experts
 
 ## Project Overview and Motivation
 
