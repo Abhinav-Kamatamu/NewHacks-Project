@@ -67,18 +67,16 @@ const Search = () => {
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
       const guidesData = JSON.stringify(guides);
-      const prompt = `You are a travel guide recommendation system. Based on the user's request and the guide database, recommend the TOP 3 best-matched guides.
+      const prompt = `You are a travel guide recommendation system. Based on the user's request and the guide database, recommend the best-matched guides — return as many relevant guides as appropriate.
 
 User Request: "${aiQuery}"
 
 Guide Database:
 ${guidesData}
 
-Return ONLY a JSON object in this exact format with no additional text:
+Return ONLY a JSON object in this exact format with no additional text. The "recommendations" array may contain any number of entries depending on relevance:
 {
   "recommendations": [
-    {"name": "Guide Name", "id": "guide-id", "reason": "Why this guide matches"},
-    {"name": "Guide Name", "id": "guide-id", "reason": "Why this guide matches"},
     {"name": "Guide Name", "id": "guide-id", "reason": "Why this guide matches"}
   ]
 }`;
