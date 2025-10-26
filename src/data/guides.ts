@@ -5,6 +5,13 @@ export interface Review {
   date: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai';
+  timestamp: Date;
+}
+
 export interface Guide {
   id: string;
   city: string;
