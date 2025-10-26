@@ -81,6 +81,7 @@ const Search = () => {
     };
     
     setChatMessages(prev => [...prev, userMessage]);
+    const messageToSend = currentMessage;
     setCurrentMessage("");
     setIsAiLoading(true);
 
@@ -89,19 +90,31 @@ const Search = () => {
       const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
       const guidesData = JSON.stringify(guides);
-      const prompt = `You are a travel guide recommendation system. Based on the user's request and the guide database, recommend the best-matched guides — return as many relevant guides as appropriate.
+      const prompt = `You are a friendly, conversational travel assistant. Keep your responses EXTREMELY concise (1-2 sentences maximum). Be conversational and helpful.
 
-User Request: "${currentMessage}"
+User Request: "${messageToSend}"
 
 Guide Database:
 ${guidesData}
 
-Return ONLY a JSON object in this exact format with no additional text. The "recommendations" array may contain any number of entries depending on relevance:
+IMPORTANT: If the user mentions ANY city, type of tour, activity, or guide preferences, you MUST return recommendations. Only use "conversation" type for general greetings, "hi/hello/thanks", or completely unrelated topics.
+
+If the user mentions cities, activities, tour types, or preferences (even vaguely), return:
 {
+  "type": "recommendations",
+  "conversationalResponse": "Your very brief, friendly response (1-2 sentences only)",
   "recommendations": [
     {"name": "Guide Name", "id": "guide-id", "reason": "Why this guide matches"}
   ]
-}`;
+}
+
+Only for general greetings like "hi", "hello", "thanks" or unrelated topics, return:
+{
+  "type": "conversation",
+  "conversationalResponse": "Your very brief, friendly response (1-2 sentences only)"
+}
+
+Return ONLY valid JSON with no additional text.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -113,45 +126,44 @@ Return ONLY a JSON object in this exact format with no additional text. The "rec
         throw new Error("Invalid response format");
       }
       
-      const recommendations = JSON.parse(jsonMatch[0]);
+      const parsedResponse = JSON.parse(jsonMatch[0]);
       
-      if (recommendations.recommendations && recommendations.recommendations.length > 0) {
-        const recommendedIds = recommendations.recommendations.map((r: any) => r.id);
+      // Debug logging
+      console.log("AI Response Type:", parsedResponse.type);
+      console.log("Has Recommendations:", parsedResponse.recommendations?.length || 0);
+      
+      // Add AI's conversational response
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        text: parsedResponse.conversationalResponse || "I'm here to help!",
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
+      
+      // Filter guides if we have specific recommendations
+      if (parsedResponse.type === "recommendations" && parsedResponse.recommendations && parsedResponse.recommendations.length > 0) {
+        const recommendedIds = parsedResponse.recommendations.map((r: any) => r.id);
         const matched = guides.filter((guide) => recommendedIds.includes(guide.id));
         setFilteredGuides(matched);
-        
-        // Add AI response to chat
-        const aiMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          text: `I found ${matched.length} perfect guides for you! Here are my recommendations based on your preferences.`,
-          sender: 'ai',
-          timestamp: new Date()
-        };
-        
-        setChatMessages(prev => [...prev, aiMessage]);
         toast.success(`Found ${matched.length} AI-matched guides for you!`);
+      } else if (parsedResponse.type === "conversation") {
+        // It's just conversation - keep guide count unchanged (stays at 70 or current filtered count)
+        // No filter change
       } else {
-        const aiMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          text: "I couldn't find any guides that match your current preferences. Could you try describing what you're looking for in a different way?",
-          sender: 'ai',
-          timestamp: new Date()
-        };
-        
-        setChatMessages(prev => [...prev, aiMessage]);
-        toast.error("No matching guides found. Try different preferences.");
+        // Recommendations type but empty recommendations array
+        toast.info("I'll help you explore the available guides.");
       }
     } catch (error) {
       console.error("AI search error:", error);
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        text: "I'm sorry, I encountered an error while searching for guides. Please try again or use the quick search feature.",
+        text: "I'm sorry, I had trouble processing that. Could you try rephrasing?",
         sender: 'ai',
         timestamp: new Date()
       };
       
       setChatMessages(prev => [...prev, aiMessage]);
-      toast.error("AI search failed. Please try again or use local search.");
     } finally {
       setIsAiLoading(false);
     }
