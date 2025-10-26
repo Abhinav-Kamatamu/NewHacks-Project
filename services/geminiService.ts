@@ -35,10 +35,10 @@ AVAILABLE GUIDES:
 ${JSON.stringify(simplifiedGuides, null, 2)}
 ---
 
-Based on the traveler's request, identify the top 1-3 guides who are the best match.
+Based on the traveler's request, identify the best-matched guides — choose as many guides as are meaningfully relevant to the request (do not arbitrarily limit the number to 3).
 Respond with ONLY a JSON object containing a "recommendationText" and a "recommendedGuides" array.
 - The recommendationText should be a friendly, conversational message to the traveler explaining your choices.
-- The recommendedGuides array should contain objects, each with a "guideId" and a "matchPercentage" (a number from 0 to 100 representing how well the guide fits the request). Rank them from best to worst match.
+- The recommendedGuides array should contain objects, each with a "guideId" and a "matchPercentage" (a number from 0 to 100 representing how well the guide fits the request). Rank them from best to worst match. The array length may vary depending on how many good matches exist.
 
 Example Response:
 {
